@@ -1,0 +1,1 @@
+pyinstaller --noconsole --onefile --add-data "2data37+A.csv;." --add-data "dna_icon.ico;." -i"dna_icon.ico" ab_predictor.py
