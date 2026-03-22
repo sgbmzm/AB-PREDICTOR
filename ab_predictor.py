@@ -388,9 +388,6 @@ if __name__ == '__main__':
     wnd.title("AB Group Predictor By Avotaynu and JewishDNA - written by Yehudit and Dr. Simcha Gershon Bohrer (ver. 29/1/2023)")
     wnd.minsize(200,200)
     wnd.geometry('820x680+0+0')
-    # הגדרת האייקון לתוכנה במקרה שסוגרים בקובץ אחד כי צריך מיקום יחסי משתמש בפונקצייה שהובאה לעיל
-    icon_path = resource_path("dna_icon.ico")
-    wnd.iconbitmap(icon_path)
     # אם רוצים לעשות שהחלון הזה יהיה מעל כל החלונות שבמחשב. זה חשוב בעיקר כאשר רזולוציית המסך מוגדלת
     #wnd.attributes('-topmost',True)
     
