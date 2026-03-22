@@ -85,11 +85,8 @@ jobs:
         ##########################################################
         # הכנת הקבצים הנוספים שצריך להוסיף לתיקיית ההתקנה
         COMMON_DATA="\
-        --add-data required_files/yda_yfull_tree.json${{ matrix.sep }}. \
-        --add-data required_files/yda_yfull_tree_version.txt${{ matrix.sep }}. \
-        --add-data required_files/ab_groups_snp.csv${{ matrix.sep }}. \
-        --add-data required_files/Msnps_hg19.vcf.gz${{ matrix.sep }}. \
-        --add-data required_files/Msnps_hg38.vcf.gz${{ matrix.sep }}. 
+        --add-data required_files/2data37+A.csv${{ matrix.sep }}. \
+        --add-data required_files/dna_icon.ico${{ matrix.sep }}. 
         "
 
         # עכשיו פקודת ייצוא קובץ ההתקנה
@@ -124,7 +121,7 @@ jobs:
       if: matrix.os == 'windows-latest'
       shell: bash
       run: |
-        APP_NAME="y-dna-analyzer"
+        APP_NAME="ab_predictor"
         ARCH="${{ matrix.arch }}"   # הגדרת שם הארכיטקטורה
         
         echo "#define AppName \"$APP_NAME\"" > setup.iss
@@ -186,17 +183,14 @@ jobs:
       
         OS="${{ matrix.os }}"
         VERSION="${{ matrix.os_short_name }}_${{ matrix.arch }}_onefile"
-        MAIN_FILE="y-dna-analyzer.py"
-        APP_NAME="y-dna-analyzer"
+        MAIN_FILE="ab_predictor.py"
+        APP_NAME="ab_predictor"
 
         ##########################################################
         # הכנת הקבצים הנוספים שצריך להוסיף לתיקיית ההתקנה
         COMMON_DATA="\
-        --add-data required_files/yda_yfull_tree.json${{ matrix.sep }}. \
-        --add-data required_files/yda_yfull_tree_version.txt${{ matrix.sep }}. \
-        --add-data required_files/ab_groups_snp.csv${{ matrix.sep }}. \
-        --add-data required_files/Msnps_hg19.vcf.gz${{ matrix.sep }}. \
-        --add-data required_files/Msnps_hg38.vcf.gz${{ matrix.sep }}. 
+        --add-data required_files/2data37+A.csv${{ matrix.sep }}. \
+        --add-data required_files/dna_icon.ico${{ matrix.sep }}. 
         "
 
         # עכשיו פקודת ייצוא קובץ ההתקנה
