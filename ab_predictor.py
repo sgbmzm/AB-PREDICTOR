@@ -32,6 +32,7 @@ If any marker is missing it is *before* the markers you have, you must put zero 
 
 # לצורך רזולוציית המסך
 import ctypes
+import platform
 
 # לצורך אייקון ועוד
 import os
@@ -383,8 +384,10 @@ if __name__ == '__main__':
 
     # הגדרת משתנה ששומר חלון טקינטר, והגדרת כותרת החלון ומינימום גודל החלון
     wnd=Tk()
-    # הגדרה שה- די פי איי יתאים גם כשרזולוציית המסך מוגדלת (במקום טרו, אפשר גם להגדיר 1 או 2)
-    ctypes.windll.shcore.SetProcessDpiAwareness(2)
+    is_windows = platform.system() == "Windows"
+    if is_windows:
+        # הגדרה שה- די פי איי יתאים גם כשרזולוציית המסך מוגדלת (במקום טרו, אפשר גם להגדיר 1 או 2) עובד רק בווינדוס
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)
     wnd.title("AB Group Predictor By Avotaynu and JewishDNA - written by Yehudit and Dr. Simcha Gershon Bohrer (ver. 29/1/2023)")
     wnd.minsize(200,200)
     wnd.geometry('820x680+0+0')
