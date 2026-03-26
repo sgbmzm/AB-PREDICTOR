@@ -49,8 +49,6 @@ from tkinter import *
 # שמירה לקובץ
 from tkinter.filedialog import asksaveasfile, askopenfilename
     
-import clipboard
-
 # פתיחת קישור אינטרנט
 from urllib.request import urlopen
 
@@ -330,36 +328,15 @@ def paste():
     input_person_data.insert(0, cliptext[:350])
     
     
-# פונקצייה עבוק לחצן "הדבק" להדבקת נתונים
-def paste_example():
+    
+def insert_example(data):
     input_person_data.delete(0, END)
-    
-    clipboard.copy(str(example)[2:-2])
-    
-    # Get the data from the clipboard
-    cliptext = wnd.clipboard_get().replace("\t",",").replace(" ","")
-    
-    input_person_data.insert(0, cliptext[:120])
 
-    # פונקצייה עבוק לחצן "הדבק" להדבקת נתונים
-def paste_example_dys464():
-    input_person_data.delete(0, END)
+    text = data[0]
+    text = text.replace("\t", ",").replace(" ", "")
     
-    clipboard.copy(str(example_dys464)[2:-2])
-    
-    # Get the data from the clipboard
-    cliptext = wnd.clipboard_get().replace("\t",",").replace(" ","")
-    
-    input_person_data.insert(0, cliptext[:120])
-
-
+    input_person_data.insert(0, text[:120])
 #------------------------------------------------------------
-
-# פונקצייה לכפתור העתקת הנתונים של קובץ הטקסט
-# פונקצייה זו מופעלת על ידי כפתור "העתק תוצאות ללוח"
-def copy_txt_to_clipboard():
-    C = txt.get(1.0, END)
-    clipboard.copy(C)
 
 
 # פונקצייה לשמירה בשם של קובץ התוצאות    
@@ -390,7 +367,7 @@ if __name__ == '__main__':
         ctypes.windll.shcore.SetProcessDpiAwareness(2)
     wnd.title("AB Group Predictor By Avotaynu and JewishDNA - written by Yehudit and Dr. Simcha Gershon Bohrer (ver. 29/1/2023)")
     wnd.minsize(200,200)
-    wnd.geometry('820x680+0+0')
+    wnd.geometry('1000x680+0+0')
     # אם רוצים לעשות שהחלון הזה יהיה מעל כל החלונות שבמחשב. זה חשוב בעיקר כאשר רזולוציית המסך מוגדלת
     #wnd.attributes('-topmost',True)
     
@@ -469,12 +446,12 @@ if __name__ == '__main__':
     # זה רק בשביל העיצוב
     Label(Buttons1, text="     ", justify = 'right', font = font_buttons).grid(column=4, row=0)
     
-    Button(Buttons1, justify = 'right', text="insert_example", command=paste_example).grid(column=5, row=0)
+    Button(Buttons1, justify = 'right', text="insert_example", command=lambda: insert_example(example)).grid(column=5, row=0)
     
     # זה רק בשביל העיצוב
     Label(Buttons1, text="     ", justify = 'right', font = font_buttons).grid(column=6, row=0)
     
-    Button(Buttons1, justify = 'right', text="insert_example_DYS464", command=paste_example_dys464).grid(column=7, row=0)
+    Button(Buttons1, justify = 'right', text="insert_example_DYS464", command=lambda: insert_example(example_dys464)).grid(column=7, row=0)
     
     # אריזת האיזור הנפרד לתוך החלון הראשי
     Buttons1.pack()
@@ -560,4 +537,3 @@ if __name__ == '__main__':
     
     # הגדרת לולאה אינסופית שמפעילה את חלון טקטינר שיצרנו
     wnd.mainloop()
-
