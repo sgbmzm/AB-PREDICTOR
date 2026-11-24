@@ -1,0 +1,157 @@
+name: Build ab_predictor for all systems
+
+on:
+  workflow_dispatch:
+    inputs:
+      official:
+        description: "Official version: a release vX.Y.Z (APP_VERSION in ab_predictor.py) that is never overwritten"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          # נבנים Windows x64, Linux x64 ו-Mac (Apple Silicon, אפליקציה רגילה .app בזיפ)
+          - os: windows-latest
+            os_short_name: win
+            ext: .exe
+            sep: ";"
+            arch: x64
+          - os: ubuntu-latest
+            os_short_name: linux
+            ext: ""
+            sep: ":"
+            arch: x64
+          - os: macos-latest
+            os_short_name: mac
+            ext: ""
+            sep: ":"
+            arch: arm64
+
+    runs-on: ${{ matrix.os }}
+    env:
+      APP_NAME: ab_predictor
+      MAIN_FILE: ab_predictor.py
+
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Version and release
+      id: ver
+      env:
+        GH_TOKEN: ${{ github.token }}
+      shell: bash
+      run: |
+        V=$(sed -n 's/^APP_VERSION = "\(.*\)"/\1/p' ab_predictor.py)
+        echo "version=$V" >> $GITHUB_OUTPUT
+        if [ "${{ inputs.official }}" = "true" ]; then
+          # גרסה רשמית: אסור לדרוס גרסה שכבר יצאה - צריך קודם להעלות את APP_VERSION
+          STARTED=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" --jq .run_started_at)
+          OLD=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/v$V" --jq '.assets[] | select(.updated_at < "'"$STARTED"'") | .name' 2>/dev/null || true)
+          if [ -n "$OLD" ]; then
+            echo "Version v$V was already released ($OLD) - raise APP_VERSION in ab_predictor.py first"; exit 1
+          fi
+          echo "tag=v$V" >> $GITHUB_OUTPUT
+        else
+          echo "tag=auto-build" >> $GITHUB_OUTPUT
+        fi
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        architecture: ${{ matrix.arch }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install platformdirs pyinstaller pillow
+
+    # ---- Mac: אפליקציה רגילה (.app) ----
+    - name: Build Mac app
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        pyinstaller --windowed --name $APP_NAME --add-data "required_files/2data37+A.csv:." $MAIN_FILE
+        mkdir -p release
+        # ditto שומר על המבנה וההרשאות של אפליקציית Mac בתוך הזיפ
+        ditto -c -k --keepParent dist/$APP_NAME.app release/${APP_NAME}_mac_arm64_app.zip
+
+    # ---- Windows / Linux: תיקייה (onedir) ----
+    - name: Build onedir
+      if: runner.os != 'macOS'
+      shell: bash
+      run: |
+        VERSION="${{ matrix.os_short_name }}_${{ matrix.arch }}_onedir"
+        pyinstaller --noconsole --name $APP_NAME --add-data "required_files/2data37+A.csv${{ matrix.sep }}." $MAIN_FILE
+        cp -r dist/$APP_NAME ${APP_NAME}_${VERSION}
+        mkdir -p release
+        python -m zipfile -c release/${APP_NAME}_${VERSION}.zip ${APP_NAME}_${VERSION}
+        rm -rf ${APP_NAME}_${VERSION}
+
+    # ---- Windows: מתקין (Inno Setup) ----
+    - name: Create setup.iss
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        ARCH="${{ matrix.arch }}"
+        echo "#define AppName \"$APP_NAME\"" > setup.iss
+        echo '' >> setup.iss
+        echo '[Setup]' >> setup.iss
+        echo 'AppName={#AppName}' >> setup.iss
+        echo "AppVersion=${{ steps.ver.outputs.version }}" >> setup.iss
+        echo 'DefaultDirName={commonpf}\{#AppName}' >> setup.iss
+        echo "OutputBaseFilename=${APP_NAME}_win_${ARCH}_installer" >> setup.iss
+        echo 'OutputDir=installer' >> setup.iss
+        echo 'Compression=lzma' >> setup.iss
+        echo 'SolidCompression=yes' >> setup.iss
+        echo 'DefaultGroupName={#AppName}' >> setup.iss
+        echo '' >> setup.iss
+        echo '[Languages]' >> setup.iss
+        echo 'Name: "hebrew"; MessagesFile: "compiler:Languages\Hebrew.isl"' >> setup.iss
+        echo 'Name: "english"; MessagesFile: "compiler:Default.isl"' >> setup.iss
+        echo '' >> setup.iss
+        echo '[Files]' >> setup.iss
+        echo 'Source: "dist\'"$APP_NAME"'\'"$APP_NAME"'.exe"; DestDir: "{app}"; Flags: ignoreversion' >> setup.iss
+        echo 'Source: "dist\'"$APP_NAME"'\_internal\*"; DestDir: "{app}\_internal"; Flags: recursesubdirs ignoreversion' >> setup.iss
+        echo '' >> setup.iss
+        echo '[Icons]' >> setup.iss
+        echo 'Name: "{commondesktop}\{#AppName}"; Filename: "{app}\'"$APP_NAME"'.exe"' >> setup.iss
+        echo 'Name: "{group}\{#AppName}"; Filename: "{app}\'"$APP_NAME"'.exe"' >> setup.iss
+        echo '' >> setup.iss
+        echo '[Run]' >> setup.iss
+        echo 'Filename: "{app}\'"$APP_NAME"'.exe"; Description: "Run {#AppName}"; Flags: nowait postinstall skipifsilent' >> setup.iss
+
+    - name: Install Inno Setup
+      if: runner.os == 'Windows'
+      run: choco install innosetup -y
+
+    - name: Build installer
+      if: runner.os == 'Windows'
+      run: iscc setup.iss
+
+    - name: Add installer to release folder
+      if: runner.os == 'Windows'
+      shell: bash
+      run: cp installer/*.exe release/
+
+    # ---- Windows / Linux: קובץ אחד (onefile) ----
+    - name: Build onefile
+      if: runner.os != 'macOS'
+      shell: bash
+      run: |
+        rm -rf build dist
+        VERSION="${{ matrix.os_short_name }}_${{ matrix.arch }}_onefile"
+        pyinstaller --noconsole --onefile --name $APP_NAME --add-data "required_files/2data37+A.csv${{ matrix.sep }}." $MAIN_FILE
+        cp dist/${APP_NAME}${{ matrix.ext }} release/${APP_NAME}_${VERSION}${{ matrix.ext }}
+
+    - name: Upload all builds to release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ steps.ver.outputs.tag }}
+        files: release/*
+        overwrite_files: true
