@@ -22,7 +22,8 @@ jobs:
             ext: .exe
             sep: ";"
             arch: x64
-          - os: ubuntu-latest
+          # Linux: נבנה על 22.04, כדי שירוץ גם על מערכות ישנות יותר (תוכנה שנבנתה על מערכת חדשה לא רצה על ישנה)
+          - os: ubuntu-22.04
             os_short_name: linux
             ext: ""
             sep: ":"
